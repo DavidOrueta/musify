@@ -1,0 +1,52 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: musify-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: musify
+      MYSQL_USER: musify
+      MYSQL_PASSWORD: musify
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+      - ./database/seed.example.sql:/docker-entrypoint-initdb.d/002-seed.sql:ro
+
+  php:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: musify-php
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      APP_ENV: development
+      MUSIFY_DB_HOST: db
+      MUSIFY_DB_PORT: 3306
+      MUSIFY_DB_NAME: musify
+      MUSIFY_DB_USER: musify
+      MUSIFY_DB_PASSWORD: musify
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    working_dir: /var/www/html
+
+  frontend:
+    image: node:20-alpine
+    container_name: musify-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8080/backend/api
+
+volumes:
+  mysql_data:

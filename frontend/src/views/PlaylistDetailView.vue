@@ -25,7 +25,25 @@ const availableSongs = computed(() => {
 })
 
 function playSong(song) {
-  window.dispatchEvent(new CustomEvent('musify:play', { detail: song }))
+  const track = {
+    ...song,
+    artist: song.artist || 'Artista',
+    image: song.image || playlist.value.image || 'https://placehold.co/600x600/10251b/8fe7c2?text=♪',
+    audioUrl: song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    duration: Number(song.duration) || 209,
+  }
+  window.dispatchEvent(new CustomEvent('musify:play', { detail: track }))
+}
+
+function queueSong(song) {
+  const track = {
+    ...song,
+    artist: song.artist || 'Artista',
+    image: song.image || playlist.value.image || 'https://placehold.co/600x600/10251b/8fe7c2?text=♪',
+    audioUrl: song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    duration: Number(song.duration) || 209,
+  }
+  window.dispatchEvent(new CustomEvent('musify:queue', { detail: track }))
 }
 
 function readImageFile(event) {
@@ -186,7 +204,7 @@ watch(query, () => {
       </section>
 
       <p v-if="error" class="playlist-error">{{ error }}</p>
-      <div v-if="playlist.songs.length" class="playlist-song-list"><article v-for="song in playlist.songs" :key="song.id" class="song-card playlist-song-row" @dblclick="playSong(song)"><img :src="song.image" :alt="song.title" class="song-cover playlist-song-cover"><strong>{{ song.title }}</strong><small>{{ song.artist }}</small><button @click.stop="removeSong(song)" aria-label="Quitar canción">×</button></article></div><div v-else class="playlist-empty-songs"><span>♪</span><strong>Aún no hay canciones</strong><small>Pulsa “Añadir canciones” para llenar tu playlist.</small></div>
+      <div v-if="playlist.songs.length" class="playlist-song-list"><article v-for="song in playlist.songs" :key="song.id" class="song-card playlist-song-row" @click="playSong(song)" @dblclick="playSong(song)"><img :src="song.image || 'https://placehold.co/600x600/10251b/8fe7c2?text=♪'" :alt="song.title" class="song-cover playlist-song-cover"><strong>{{ song.title }}</strong><small>{{ song.artist }}</small><div class="song-actions"><button type="button" class="queue-mini-button" aria-label="Añadir a la cola" title="Añadir a la cola" @click.stop="queueSong(song)">≡+</button><button @click.stop="removeSong(song)" aria-label="Quitar canción">×</button></div></article></div><div v-else class="playlist-empty-songs"><span>♪</span><strong>Aún no hay canciones</strong><small>Pulsa “Añadir canciones” para llenar tu playlist.</small></div>
     </template>
   </section>
 </template>

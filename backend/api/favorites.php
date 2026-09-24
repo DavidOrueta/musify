@@ -7,10 +7,11 @@ $userId = requireAuth();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $statement = $pdo->prepare(
-        'SELECT s.id, s.title, a.name AS artist, s.image, s.album_id, f.created_at
+        'SELECT s.id, s.title, a.name AS artist, al.title AS album, s.image, s.album_id, f.created_at
          FROM favorites f
          INNER JOIN songs s ON s.id = f.song_id
          INNER JOIN artists a ON a.id = s.artist_id
+         LEFT JOIN albums al ON al.id = s.album_id
          WHERE f.user_id = ?
          ORDER BY f.created_at DESC'
     );

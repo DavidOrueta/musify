@@ -3,23 +3,9 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { addFavorite, getAlbums, getFavorites, getSongs, removeFavorite } from '../services/api'
 
-const albums = ref([
-  { id: 20, title: 'La Joia', artist: 'Bad Gyal', image: 'https://i.scdn.co/image/ab67616d0000b27381909f39477fbb311c77ef35' },
-  { id: 2, title: 'Un Verano Sin Ti', artist: 'Bad Bunny', image: 'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e0249d694203245f241a1bcaa72' },
-  { id: 7, title: 'Motomami', artist: 'Rosalía', image: 'https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02ac8367a27c0eb7195dc3a58d' },
-  { id: 22, title: 'Warm Up', artist: 'Bad Gyal', image: 'https://i.scdn.co/image/ab67616d0000b2737a0b5c826689bee750c3605f' },
-  { id: 1, title: 'After Hours', artist: 'The Weeknd', image: 'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e028863bc11d2aa12b54f5aeb36' },
-  { id: 6, title: 'El Mal Querer', artist: 'Rosalía', image: 'https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02b115d8632e69edce1a1da7d8' },
-])
+const albums = ref([])
 
-const songs = ref([
-  { id: 'carousel', title: 'CAROUSEL', artist: 'Travis Scott', image: '' },
-  { id: 'screw', title: 'R.I.P. SCREW', artist: 'Travis Scott', image: '' },
-  { id: 'god', title: 'STOP TRYING TO BE GOD', artist: 'Travis Scott', image: '' },
-  { id: 'bystanders', title: 'NO BYSTANDERS', artist: 'Travis Scott', image: '' },
-  { id: 'moscu', title: 'Moscu Mule', artist: 'Bad Bunny', image: '' },
-  { id: 'skeletons', title: 'SKELETONS', artist: 'Travis Scott', image: '' },
-])
+const songs = ref([])
 
 const favoriteIds = ref(new Set())
 const showAllSongs = ref(false)
@@ -58,7 +44,25 @@ function isFavorite(songId) {
 }
 
 function playSong(song) {
-  window.dispatchEvent(new CustomEvent('musify:play', { detail: song }))
+  const track = {
+    ...song,
+    artist: song.artist || 'Artista',
+    image: song.image || 'https://placehold.co/600x600/10251b/8fe7c2?text=♪',
+    audioUrl: song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    duration: Number(song.duration) || 209,
+  }
+  window.dispatchEvent(new CustomEvent('musify:play', { detail: track }))
+}
+
+function queueSong(song) {
+  const track = {
+    ...song,
+    artist: song.artist || 'Artista',
+    image: song.image || 'https://placehold.co/600x600/10251b/8fe7c2?text=♪',
+    audioUrl: song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    duration: Number(song.duration) || 209,
+  }
+  window.dispatchEvent(new CustomEvent('musify:queue', { detail: track }))
 }
 
 async function toggleFavorite(song) {
@@ -91,7 +95,9 @@ onMounted(async () => {
       favoriteIds.value = new Set(favoritesResponse.songs.map((song) => Number(song.id)))
     }
   } catch {
-    // Keep the recovered visual sample available until MySQL is restored.
+    albums.value = []
+    songs.value = []
+    favoriteIds.value = new Set()
   }
 })
 </script>
@@ -99,10 +105,10 @@ onMounted(async () => {
 <template>
   <section class="home-view">
     <div class="hero-panel"><div><span class="eyebrow">Musify</span><h1>Tu música favorita</h1><p>Descubre artistas, álbumes nuevos y playlists creadas para tu día.</p><div class="hero-actions"><RouterLink class="primary-button" to="/artistas">Explorar</RouterLink><RouterLink class="secondary-button" to="/listas">Tus listas</RouterLink></div></div><div class="hero-disc">♪</div></div>
-    <div class="section-heading"><h2>Álbumes recientes</h2><RouterLink to="/artistas">Ver todo</RouterLink></div>
-    <div class="album-grid"><RouterLink v-for="album in albums" :key="album.id" :to="`/album/${album.id}`" class="album-card"><img :src="album.image" :alt="album.title"><span class="eyebrow">ÁLBUM</span><strong>{{ album.title }}</strong><small>{{ album.artist }}</small></RouterLink></div>
-    <div class="section-heading"><h2>Canciones populares</h2><span>{{ songs.length }} temas</span></div>
-    <div class="song-grid"><article v-for="song in visibleSongs" :key="song.id" class="song-card" @dblclick="playSong(song)"><img v-if="song.image" :src="song.image" :alt="song.title" class="song-cover"><div v-else class="song-art">♪</div><span class="tag">CANCIÓN</span><strong>{{ song.title }}</strong><small>{{ song.artist }}</small><button type="button" @click.stop="toggleFavorite(song)" :aria-label="isFavorite(song.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'">{{ isFavorite(song.id) ? '♥' : '♡' }}</button></article></div>
+    <div v-if="albums.length" class="section-heading"><h2>Álbumes recientes</h2><RouterLink to="/artistas">Ver todo</RouterLink></div>
+    <div v-if="albums.length" class="album-grid"><RouterLink v-for="album in albums" :key="album.id" :to="`/album/${album.id}`" class="album-card"><img :src="album.image" :alt="album.title"><span class="eyebrow">ÁLBUM</span><strong>{{ album.title }}</strong><small>{{ album.artist }}</small></RouterLink></div>
+    <div v-if="songs.length" class="section-heading"><h2>Canciones populares</h2><span>{{ songs.length }} temas</span></div>
+    <div v-if="songs.length" class="song-grid"><article v-for="song in visibleSongs" :key="song.id" class="song-card" @click="playSong(song)" @dblclick="playSong(song)"><img v-if="song.image" :src="song.image" :alt="song.title" class="song-cover"><div v-else class="song-art">♪</div><span class="tag">CANCIÓN</span><strong>{{ song.title }}</strong><small>{{ song.artist }}</small><div class="song-actions"><button type="button" class="queue-mini-button" @click.stop="queueSong(song)" aria-label="Añadir a la cola" title="Añadir a la cola">≡+</button><button type="button" @click.stop="toggleFavorite(song)" :aria-label="isFavorite(song.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'">{{ isFavorite(song.id) ? '♥' : '♡' }}</button></div></article></div>
     <button v-if="songs.length > 6" type="button" class="secondary-button" @click="showAllSongs = !showAllSongs">{{ showAllSongs ? 'Ver menos' : 'Ver más canciones' }}</button>
   </section>
 </template>

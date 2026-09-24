@@ -17,7 +17,25 @@ function isFavorite(songId) {
 }
 
 function playSong(song) {
-  window.dispatchEvent(new CustomEvent('musify:play', { detail: song }))
+  const track = {
+    ...song,
+    artist: song.artist || artist.value.name,
+    image: song.image || artist.value.image || 'https://placehold.co/600x600/10251b/8fe7c2?text=♪',
+    audioUrl: song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    duration: Number(song.duration) || 209,
+  }
+  window.dispatchEvent(new CustomEvent('musify:play', { detail: track }))
+}
+
+function queueSong(song) {
+  const track = {
+    ...song,
+    artist: song.artist || artist.value.name,
+    image: song.image || artist.value.image || 'https://placehold.co/600x600/10251b/8fe7c2?text=♪',
+    audioUrl: song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    duration: Number(song.duration) || 209,
+  }
+  window.dispatchEvent(new CustomEvent('musify:queue', { detail: track }))
 }
 
 async function toggleFavorite(song) {
@@ -72,11 +90,11 @@ onMounted(async () => {
 
       <div class="section-heading"><h2>Canciones de {{ artist.name }}</h2><span>{{ artist.songs.length }} temas</span></div>
       <div class="song-grid" :class="{ 'is-expanded': showAllSongs }">
-        <article v-for="song in visibleSongs" :key="song.id" class="song-card" @dblclick="playSong(song)">
+        <article v-for="song in visibleSongs" :key="song.id" class="song-card" @click="playSong(song)" @dblclick="playSong(song)">
           <img v-if="song.image" :src="song.image" :alt="song.title" class="song-cover">
           <div v-else class="song-art">♪</div>
           <span class="tag">CANCIÓN</span><strong>{{ song.title }}</strong><small>{{ song.artist }}</small>
-          <button type="button" @click.stop="toggleFavorite(song)" :aria-label="isFavorite(song.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'">{{ isFavorite(song.id) ? '♥' : '♡' }}</button>
+          <div class="song-actions"><button type="button" class="queue-mini-button" aria-label="Añadir a la cola" title="Añadir a la cola" @click.stop="queueSong(song)">≡+</button><button type="button" @click.stop="toggleFavorite(song)" :aria-label="isFavorite(song.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'">{{ isFavorite(song.id) ? '♥' : '♡' }}</button></div>
         </article>
       </div>
       <button v-if="artist.songs.length > 6" type="button" class="secondary-button" @click="showAllSongs = !showAllSongs">{{ showAllSongs ? 'Ver menos' : 'Ver más canciones' }}</button>

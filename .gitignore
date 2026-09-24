@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Env files
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!.env.example
+
+
+# Local database dump may contain private users, tokens and hashes
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

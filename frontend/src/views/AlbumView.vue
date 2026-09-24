@@ -15,7 +15,25 @@ function isFavorite(songId) {
 }
 
 function playSong(song) {
-	window.dispatchEvent(new CustomEvent('musify:play', { detail: { ...song, artist: song.artist || album.value.artist } }))
+	const track = {
+		...song,
+		artist: song.artist || album.value.artist,
+		image: song.image || album.value.image || 'https://placehold.co/600x600/10251b/8fe7c2?text=♪',
+		audioUrl: song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+		duration: Number(song.duration) || 209,
+	}
+	window.dispatchEvent(new CustomEvent('musify:play', { detail: track }))
+}
+
+function queueSong(song) {
+	const track = {
+		...song,
+		artist: song.artist || album.value.artist,
+		image: song.image || album.value.image || 'https://placehold.co/600x600/10251b/8fe7c2?text=♪',
+		audioUrl: song.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+		duration: Number(song.duration) || 209,
+	}
+	window.dispatchEvent(new CustomEvent('musify:queue', { detail: track }))
 }
 
 async function toggleFavorite(song) {
@@ -66,10 +84,10 @@ watch(() => route.params.id, loadAlbum)
 			</div>
 			<div class="section-heading"><h2>Canciones del álbum</h2><span>{{ album.songs.length }} temas</span></div>
 			<div class="song-grid">
-				<article v-for="song in album.songs" :key="song.id" class="song-card" @dblclick="playSong(song)">
-					<img :src="song.image || album.image" :alt="song.title" class="song-cover">
+				<article v-for="song in album.songs" :key="song.id" class="song-card" @click="playSong(song)" @dblclick="playSong(song)">
+					<img :src="song.image || album.image || 'https://placehold.co/600x600/10251b/8fe7c2?text=♪'" :alt="song.title" class="song-cover">
 					<span class="tag">CANCIÓN</span><strong>{{ song.title }}</strong><small>{{ song.artist }}</small>
-					<button type="button" :aria-label="isFavorite(song.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'" @click.stop="toggleFavorite(song)">{{ isFavorite(song.id) ? '♥' : '♡' }}</button>
+					<div class="song-actions"><button type="button" class="queue-mini-button" aria-label="Añadir a la cola" title="Añadir a la cola" @click.stop="queueSong(song)">≡+</button><button type="button" :aria-label="isFavorite(song.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'" @click.stop="toggleFavorite(song)">{{ isFavorite(song.id) ? '♥' : '♡' }}</button></div>
 				</article>
 			</div>
 			<p v-if="favoriteError" class="api-message api-error">{{ favoriteError }}</p>

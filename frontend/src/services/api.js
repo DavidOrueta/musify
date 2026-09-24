@@ -2,16 +2,23 @@ const apiHost = typeof window !== 'undefined' ? window.location.hostname : 'loca
 const apiBase = import.meta.env.VITE_API_URL || `http://${apiHost}/musify/backend/api`
 
 async function request(endpoint, options = {}) {
-  const response = await fetch(`${apiBase}/${endpoint}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    ...options,
-  })
-  const payload = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    throw new Error(payload.error || 'No se pudo completar la petición.')
+  try {
+    const response = await fetch(`${apiBase}/${endpoint}`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      ...options,
+    })
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(payload.error || 'No se pudo completar la petición.')
+    }
+    return payload
+  } catch (error) {
+    if (error instanceof TypeError || error?.name === 'TypeError') {
+      return {}
+    }
+    throw error
   }
-  return payload
 }
 
 export const getAlbums = (limit = 50) => request(`catalog.php?resource=albums&limit=${limit}`)
