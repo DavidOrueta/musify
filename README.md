@@ -2,8 +2,6 @@
 
 Musify es una app de música tipo streaming que combina un frontend en Vue 3 con una API en PHP y MySQL. El proyecto incluye catálogo, búsqueda, artistas, álbumes, favoritos y playlists, con un flujo real de autenticación y gestión de contenido.
 
-![CI](https://github.com/USUARIO/MUSIFY/actions/workflows/ci.yml/badge.svg)
-
 ## Stack
 
 - Frontend: Vue 3 + Vite
@@ -18,15 +16,37 @@ Musify es una app de música tipo streaming que combina un frontend en Vue 3 con
 - Perfil de artista y detalle de álbum
 - Favoritos por usuario
 - Playlists personales
-- Reproducción básica de canciones
+- Reproductor con controles de progreso y cola de reproducción
 - Autenticación de usuarios
+
+El audio de las canciones es de demostración y actualmente usa una fuente compartida; no es un catálogo de streaming comercial.
+
+### Cuenta de demostración
+
+- Email: `demo@musify.local`
+- Contraseña: `MusifyDemo2026!`
+
+La base completa de demostración incluye favoritos y una playlist para esta cuenta. Es únicamente para la demo local y no debe reutilizarse en producción.
+
+## Capturas
+
+### Inicio y catálogo
+
+![Página de inicio con álbumes y canciones](screenshots/home.jpg)
+
+### Artistas
+
+![Catálogo de artistas](screenshots/artists.jpg)
+
+### Detalle de álbum
+
+![Detalle del álbum After Hours y su lista de canciones](screenshots/album.jpg)
 
 ## Estructura
 
 - `frontend/`: aplicación cliente
 - `backend/api/`: endpoints PHP
-- `src/`: posible zona de trabajo extra o archivos compartidos
-- `README.md`: documentación principal
+- `database/`: esquema y datos de demostración
 
 ## Requisitos
 
@@ -40,10 +60,9 @@ Musify es una app de música tipo streaming que combina un frontend en Vue 3 con
 
 1. Clona el repositorio.
 2. Copia la app a tu carpeta de XAMPP (por ejemplo `C:/xampp/htdocs/musify`).
-3. Crea la base de datos MySQL con el nombre `musify`.
-4. Configura las variables de entorno si tu setup lo requiere.
-5. Levanta Apache y MySQL en XAMPP.
-6. En el frontend:
+3. Crea la base de datos MySQL con el nombre `musify` e importa `database/init.sql` desde phpMyAdmin.
+4. Levanta Apache y MySQL en XAMPP.
+5. En el frontend:
 
 ```powershell
 cd frontend
@@ -74,6 +93,8 @@ copy .env.example .env
 ```powershell
 docker compose up --build
 ```
+
+En un volumen MySQL nuevo, Docker carga `database/init.sql` con el catálogo, favoritos y playlist de demostración. La importación automática ocurre solo la primera vez que se inicializa el volumen; no sobrescribe una base existente.
 
 Para ejecutarlo en segundo plano:
 
@@ -119,20 +140,45 @@ VITE_API_URL=http://localhost:8080/backend/api
 ```powershell
 cd frontend
 npm ci
+npm test
 npm run build
 cd ..
-php backend/tests/smoke.php
+& C:\xampp\php\php.exe backend\tests\smoke.php
 ```
 
-El workflow de GitHub Actions ejecuta automáticamente el build de Vue, el lint de todos los archivos PHP, el smoke test y la validación de Docker Compose en cada push a `main` y en cada pull request.
+`npm test` comprueba el orden FIFO y el comportamiento de una cola vacía. La comprobación PHP estructural verifica los archivos principales de la API. GitHub Actions también ejecuta una prueba HTTP de autenticación y favoritos contra MySQL 8, además de comprobar la sintaxis PHP y la configuración de Docker Compose en cada push a `main` y en cada pull request.
+
+### Prueba de integración de la API
+
+La prueba registra un usuario temporal, verifica autenticación y crea, consulta y elimina un favorito. Requiere que MySQL tenga cargados `database/schema.sql` y `database/seed.example.sql`, y que el servidor PHP esté activo desde la raíz del repositorio.
+
+En una terminal PowerShell:
+
+```powershell
+$env:MUSIFY_DB_HOST = '127.0.0.1'
+$env:MUSIFY_DB_PORT = '3306'
+$env:MUSIFY_DB_NAME = 'musify'
+$env:MUSIFY_DB_USER = 'musify'
+$env:MUSIFY_DB_PASSWORD = 'musify'
+& C:\xampp\php\php.exe -S 127.0.0.1:8080 -t .
+```
+
+En otra terminal desde la raíz:
+
+```powershell
+$env:MUSIFY_TEST_API_URL = 'http://127.0.0.1:8080/backend/api'
+& C:\xampp\php\php.exe backend\tests\integration.php
+```
+
+GitHub Actions levanta una instancia MySQL 8 aislada, carga el esquema y el seed de ejemplo y ejecuta esta prueba automáticamente.
 
 ## Datos y privacidad
 
-- `database/schema.sql` contiene el esquema público.
-- `database/seed.example.sql` contiene datos públicos de demostración.
-- El archivo local `database/init.sql` puede contener el volcado completo de desarrollo, incluyendo usuarios, tokens o hashes, y está excluido de Git mediante `.gitignore`. No lo publiques tal cual en un repositorio público.
+- `database/schema.sql` contiene el esquema usado por la CI.
+- `database/seed.example.sql` contiene datos mínimos de demostración para pruebas y CI.
+- `database/init.sql` es el volcado ficticio completo que usa Docker para recrear el catálogo y el estado de demo. No añadas datos reales ni credenciales personales a este archivo.
 
-Para una publicación limpia, conserva el seed de ejemplo y genera datos de prueba nuevos.
+La CI conserva el esquema y seed mínimos para probar la API de forma aislada; Docker usa el volcado completo para mostrar la aplicación con el catálogo de demostración.
 
 ## Publicar en GitHub
 
@@ -141,29 +187,16 @@ git add .
 git status
 git commit -m "Prepare Musify portfolio project"
 git branch -M main
-git remote add origin https://github.com/USUARIO/musify.git
+git remote add origin <URL-del-repositorio>
 git push -u origin main
 ```
 
-Sustituye `USUARIO` por tu nombre de GitHub. Comprueba `git status` antes del commit y confirma que `database/init.sql`, `.env` y cualquier contraseña no aparecen entre los archivos preparados.
-
-## Roadmap sugerido
+Sustituye `<URL-del-repositorio>` por la URL de tu repositorio. Comprueba `git status` antes del commit: `database/init.sql` debe aparecer porque contiene datos ficticios de demostración; `.env` no debe aparecer.
 
 ## Próximos pasos
 
-- añadir capturas reales de la aplicación al README
-- incorporar tests de interacción para las vistas principales
-- añadir paginación y filtros de catálogo
-- desplegar frontend y API en un entorno público
+- publicar una demo y añadir capturas reales de la aplicación
 - sustituir las URLs de audio de demostración por recursos propios o con licencia
-
-- tests automáticos del backend y del frontend
-- CI con GitHub Actions
-- Docker Compose más completo
-- manejo de errores con mensajes de usuario amigables
-- filtros y ordenación de catálogo
-- mejoras de UX para mobile
-- documentación de arquitectura y endpoints
 
 ## Licencia
 

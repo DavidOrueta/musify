@@ -21,7 +21,8 @@ frontend/.env.*
 !.env.example
 
 
-# Local database dump may contain private users, tokens and hashes
+# Keep real credentials and environment files out of Git.
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

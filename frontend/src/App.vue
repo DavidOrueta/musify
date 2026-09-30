@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { getCurrentUser, login, logout, register, searchCatalog } from './services/api'
+import { takeNextTrack } from './playerQueue.js'
 import logoUrl from './assets/a1c55ca8-1a92-4bff-b1a6-6d240a09887e.png'
 
 const demoAudioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
@@ -63,10 +64,14 @@ function handleAuthRequest() {
   openAuth('login')
 }
 
+function handleQueueRequest(event) {
+  addTrackToQueue(event.detail)
+}
+
 onMounted(async () => {
   window.addEventListener('musify:auth', handleAuthRequest)
   window.addEventListener('musify:play', playTrack)
-  window.addEventListener('musify:queue', (event) => addTrackToQueue(event.detail))
+  window.addEventListener('musify:queue', handleQueueRequest)
   const response = await getCurrentUser().catch(() => ({ authenticated: false }))
   currentUser.value = response.authenticated ? response.user : null
 })
@@ -75,7 +80,7 @@ onUnmounted(() => {
   clearTimeout(searchTimer)
   window.removeEventListener('musify:auth', handleAuthRequest)
   window.removeEventListener('musify:play', playTrack)
-  window.removeEventListener('musify:queue', (event) => addTrackToQueue(event.detail))
+  window.removeEventListener('musify:queue', handleQueueRequest)
 })
 
 function openAuth(mode) {
@@ -131,11 +136,10 @@ function addTrackToQueue(track) {
 }
 
 function playNextFromQueue() {
-  if (!playerQueue.value.length) return
-  const next = playerQueue.value.shift()
-  playerQueue.value = [...playerQueue.value]
+  const { next, remaining } = takeNextTrack(playerQueue.value)
+  playerQueue.value = remaining
   if (next) {
-    playTrack({ detail: next })
+    playTrack(next)
   }
 }
 
@@ -187,6 +191,11 @@ function updatePlayerTime() {
   if (audioRef.value) {
     playerCurrentTime.value = Number(audioRef.value.currentTime) || 0
   }
+}
+
+function updatePlayerDuration(event) {
+  const duration = Number(event.currentTarget.duration) || Number(playerSong.value.duration) || 209
+  playerDuration.value = duration
 }
 
 function seekPlayer(event) {
@@ -276,10 +285,7 @@ const matchingItems = computed(() => {
           ref="audioRef"
           :src="playerSong.audioUrl || demoAudioUrl"
           preload="metadata"
-          @loadedmetadata="() => {
-            const duration = Number(audioRef?.value?.duration) || Number(playerSong.duration) || 209
-            playerDuration.value = duration
-          }"
+          @loadedmetadata="updatePlayerDuration"
           @timeupdate="updatePlayerTime"
           @pause="playerPlaying = false"
           @ended="handleTrackEnded"

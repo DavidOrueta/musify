@@ -4,16 +4,20 @@ services:
     container_name: musify-db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: musify
-      MYSQL_USER: musify
-      MYSQL_PASSWORD: musify
+      MYSQL_DATABASE: ${MUSIFY_DB_NAME:-musify}
+      MYSQL_USER: ${MUSIFY_DB_USER:-musify}
+      MYSQL_PASSWORD: ${MUSIFY_DB_PASSWORD:-musify}
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
-      - ./database/seed.example.sql:/docker-entrypoint-initdb.d/002-seed.sql:ro
+      - ./database/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   php:
     build:
@@ -22,14 +26,15 @@ services:
     container_name: musify-php
     restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      APP_ENV: development
-      MUSIFY_DB_HOST: db
-      MUSIFY_DB_PORT: 3306
-      MUSIFY_DB_NAME: musify
-      MUSIFY_DB_USER: musify
-      MUSIFY_DB_PASSWORD: musify
+      APP_ENV: ${APP_ENV:-development}
+      MUSIFY_DB_HOST: ${MUSIFY_DB_HOST:-db}
+      MUSIFY_DB_PORT: ${MUSIFY_DB_PORT:-3306}
+      MUSIFY_DB_NAME: ${MUSIFY_DB_NAME:-musify}
+      MUSIFY_DB_USER: ${MUSIFY_DB_USER:-musify}
+      MUSIFY_DB_PASSWORD: ${MUSIFY_DB_PASSWORD:-musify}
     ports:
       - "8080:80"
     volumes:

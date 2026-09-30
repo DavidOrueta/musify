@@ -24,18 +24,61 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Run frontend tests
+        run: npm test
       - name: Build
         run: npm run build
 
   backend:
-    name: PHP validation
+    name: PHP and MySQL integration
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: musify
+          MYSQL_USER: musify
+          MYSQL_PASSWORD: musify
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --user=root --password=root --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql
+      - name: Initialize test database
+        env:
+          MYSQL_PWD: musify
+        run: |
+          mysql --host=127.0.0.1 --port=3306 --user=musify musify < database/schema.sql
+          mysql --host=127.0.0.1 --port=3306 --user=musify musify < database/seed.example.sql
       - name: Validate PHP syntax
         run: find backend -name '*.php' -print0 | xargs -0 -n1 php -l
-      - name: Run backend smoke test
+      - name: Check backend structure
         run: php backend/tests/smoke.php
+      - name: Test API with MySQL
+        env:
+          APP_ENV: test
+          MUSIFY_DB_HOST: 127.0.0.1
+          MUSIFY_DB_PORT: 3306
+          MUSIFY_DB_NAME: musify
+          MUSIFY_DB_USER: musify
+          MUSIFY_DB_PASSWORD: musify
+          MUSIFY_TEST_API_URL: http://127.0.0.1:8080/backend/api
+        run: |
+          php -S 127.0.0.1:8080 -t . > /tmp/musify-api.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          curl --retry 20 --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:8080/backend/api/index.php > /dev/null
+          php backend/tests/integration.php
       - name: Validate Compose configuration
         run: docker compose config

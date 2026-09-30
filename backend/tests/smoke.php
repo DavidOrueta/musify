@@ -17,4 +17,4 @@ foreach ($requiredFiles as $file) {
     }
 }
 
-fwrite(STDOUT, "Backend smoke test passed.\n");
+fwrite(STDOUT, "Backend structure check passed.\n");

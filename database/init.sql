@@ -513,7 +513,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `password_hash`, `created_at`) VALUES
-(4, 'David', 'david@gmail.com', '$2y$10$gOyv.2xAZzKR5JCYwVxsR.hA.bewGzCSEO.ozkoMT8UaCmzr7m4ci', '2026-09-17 18:11:05');
+(4, 'David', 'demo@musify.local', '$2y$10$6lmCWQPb54p6oMhjGe1cM.OZ12YGuZpa8ZCEJWy.ZXoyNUtwVUY/i', '2026-09-17 18:11:05');
 
 -- --------------------------------------------------------
 
