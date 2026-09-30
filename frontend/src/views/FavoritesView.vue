@@ -66,8 +66,10 @@ async function toggleFavorite(song) {
   try {
     await removeFavorite(Number(song.id))
     favorites.value = favorites.value.filter((item) => Number(item.id) !== Number(song.id))
-  } catch {
-    // Ignore errors so the list remains stable when the user is not authenticated.
+  } catch (requestError) {
+    if (requestError?.message === 'Necesitas iniciar sesión.') {
+      window.dispatchEvent(new CustomEvent('musify:auth'))
+    }
   }
 }
 

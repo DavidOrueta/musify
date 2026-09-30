@@ -76,8 +76,10 @@ async function toggleFavorite(song) {
 
     await addFavorite(songId)
     favoriteIds.value.add(songId)
-  } catch {
-    // Silent fail to avoid breaking the UI when the session is not authenticated.
+  } catch (error) {
+    if (error?.message === 'Necesitas iniciar sesión.') {
+      window.dispatchEvent(new CustomEvent('musify:auth'))
+    }
   }
 }
 

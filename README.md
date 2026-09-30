@@ -2,6 +2,10 @@
 
 Musify es una app de música tipo streaming que combina un frontend en Vue 3 con una API en PHP y MySQL. El proyecto incluye catálogo, búsqueda, artistas, álbumes, favoritos y playlists, con un flujo real de autenticación y gestión de contenido.
 
+## Demo en vivo
+
+[Abrir Musify](https://musify-orpin-rho.vercel.app/)
+
 ## Stack
 
 - Frontend: Vue 3 + Vite
